@@ -11,21 +11,18 @@ import butterknife.ButterKnife
 import butterknife.OnClick
 import com.nex3z.fingerpaintview.FingerPaintView
 import java.io.IOException
-import java.util.Optional.empty
-import java.util.OptionalDouble.empty
-import java.util.OptionalLong.empty
 
 
 class MainActivity : AppCompatActivity() {
     //целимся в нужные объекты на Main_активити
     @BindView(R.id.fpv_paint)
-    var mFpvPaint: FingerPaintView? = null
+    lateinit var mFpvPaint: FingerPaintView
 
     @BindView(R.id.tv_prediction)
-    var mTvPrediction: TextView? = null
+    lateinit var mTvPrediction: TextView
 
     @BindView(R.id.tv_probability)
-    var mTvProbability: TextView? = null
+    lateinit var mTvProbability: TextView
 
     @BindView(R.id.tv_timecost)
     var mTvTimeCost: TextView? = null
@@ -45,11 +42,11 @@ class MainActivity : AppCompatActivity() {
                 "onDetectClick(): Classifier is not initialized"
             )
             return
-        } else if (mFpvPaint!!.isEmpty) {
+        } else if (mFpvPaint.isEmpty) {
             Toast.makeText(this, R.string.please_write_a_digit, Toast.LENGTH_SHORT).show()
             return
         }
-        val image = mFpvPaint!!.exportToBitmap(
+        val image = mFpvPaint.exportToBitmap(
             Classifier.IMG_WIDTH, Classifier.IMG_HEIGHT
         )
         val result = mClassifier!!.classify(image)
@@ -58,9 +55,9 @@ class MainActivity : AppCompatActivity() {
 
     @OnClick(R.id.btn_clear)
     fun onClearClick() {
-        mFpvPaint!!.clear()
-        mTvPrediction?.setText(R.string.empty)
-        mTvProbability?.setText(R.string.empty)
+        mFpvPaint.clear()
+        mTvPrediction.setText(R.string.empty)
+        mTvProbability.setText(R.string.empty)
         mTvTimeCost?.setText(R.string.empty)
     }
 
@@ -78,8 +75,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderResult(result: Result) {
-        mTvPrediction!!.text = result.number.toString()
-        mTvProbability!!.text = result.probability.toString()
+        mTvPrediction.text = result.number.toString()
+        mTvProbability.text = result.probability.toString()
         mTvTimeCost!!.text = String.format(
             getString(R.string.timecost_value),
             result.timeCost

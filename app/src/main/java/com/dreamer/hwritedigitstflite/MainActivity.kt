@@ -7,8 +7,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import butterknife.BindView
-import butterknife.ButterKnife
+import butterknife.ButterKnife.bind
+
 import butterknife.OnClick
+import com.dreamer.hwritedigitstflite.R.id.btn_detect
 import com.nex3z.fingerpaintview.FingerPaintView
 import java.io.IOException
 
@@ -25,16 +27,16 @@ class MainActivity : AppCompatActivity() {
     lateinit var mTvProbability: TextView
 
     @BindView(R.id.tv_timecost)
-    var mTvTimeCost: TextView? = null
+    lateinit var mTvTimeCost: TextView
     private var mClassifier: Classifier? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        ButterKnife.bind(this)
+        bind(this)
         init()
     }
 
-    @OnClick(R.id.btn_detect)
+    @OnClick(btn_detect)
     fun onDetectClick() {
         if (mClassifier == null) {
             Log.e(
@@ -58,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         mFpvPaint.clear()
         mTvPrediction.setText(R.string.empty)
         mTvProbability.setText(R.string.empty)
-        mTvTimeCost?.setText(R.string.empty)
+        mTvTimeCost.setText(R.string.empty)
     }
 
     private fun init() {
@@ -77,7 +79,7 @@ class MainActivity : AppCompatActivity() {
     private fun renderResult(result: Result) {
         mTvPrediction.text = result.number.toString()
         mTvProbability.text = result.probability.toString()
-        mTvTimeCost!!.text = String.format(
+        mTvTimeCost.text = String.format(
             getString(R.string.timecost_value),
             result.timeCost
         )

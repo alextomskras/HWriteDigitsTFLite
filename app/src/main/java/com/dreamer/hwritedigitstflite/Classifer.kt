@@ -1,0 +1,94 @@
+package com.dreamer.hwritedigitstflite
+
+import android.app.Activity
+import android.graphics.Bitmap
+import android.os.SystemClock
+import android.util.Log
+import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.Interpreter.*
+import java.io.FileInputStream
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
+import java.util.*
+
+
+class Classifier(activity: Activity) {
+    private val options: Options = Options()
+    private val mInterpreter: Interpreter
+    private val mImageData: ByteBuffer?
+    private val mImagePixels =
+        IntArray(IMG_HEIGHT * IMG_WIDTH)
+    private val mResult =
+        Array(1) { FloatArray(NUM_CLASSES) }
+
+    fun classify(bitmap: Bitmap): Result {
+        convertBitmapToByteBuffer(bitmap)
+        val startTime = SystemClock.uptimeMillis()
+        mImageData?.let { mInterpreter.run(it, mResult) }
+        val endTime = SystemClock.uptimeMillis()
+        val timeCost = endTime - startTime
+        Log.v(
+            LOG_TAG, "classify(): result = " + Arrays.toString(mResult[0])
+                .toString() + ", timeCost = " + timeCost
+        )
+        return Result(mResult[0], timeCost)
+    }
+
+    @Throws(IOException::class)
+    //Процедура загрузки файла подготовленной сетки
+    private fun loadModelFile(activity: Activity): MappedByteBuffer {
+        val fileDescriptor =
+            activity.assets.openFd(MODEL_NAME)
+        val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
+        val fileChannel: FileChannel = inputStream.getChannel()
+        val startOffset = fileDescriptor.startOffset
+        val declaredLength = fileDescriptor.declaredLength
+        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
+    }
+
+    private fun convertBitmapToByteBuffer(bitmap: Bitmap) {
+        if (mImageData == null) {
+            return
+        }
+        mImageData.rewind()
+        bitmap.getPixels(
+            mImagePixels, 0, bitmap.width, 0, 0,
+            bitmap.width, bitmap.height
+        )
+        var pixel = 0
+        for (i in 0 until IMG_WIDTH) {
+            for (j in 0 until IMG_HEIGHT) {
+                val value = mImagePixels[pixel++]
+                mImageData.putFloat(convertPixel(value))
+            }
+        }
+    }
+
+    companion object {
+        //таг для логов - облегчает поиски и прицеливание в logcat
+        private val LOG_TAG = Classifier::class.java.simpleName
+        //название файла с заготовкой сетки в формате TensorFlowLite
+        private const val MODEL_NAME = "mnist.tflite"
+        private const val BATCH_SIZE = 1
+        //размер картинки - обосновано наполнением MNIST Исходного датасета
+        const val IMG_HEIGHT = 28
+        const val IMG_WIDTH = 28
+        private const val NUM_CHANNEL = 1
+        private const val NUM_CLASSES = 10
+        //приводим к одинаковому цвету
+        private fun convertPixel(color: Int): Float {
+            return (255 - ((color shr 16 and 0xFF) * 0.299f + (color shr 8 and 0xFF) * 0.587f + (color and 0xFF) * 0.114f)) / 255.0f
+        }
+    }
+
+    init {
+        mInterpreter = Interpreter(loadModelFile(activity), options)
+        mImageData = ByteBuffer.allocateDirect(
+            4 * BATCH_SIZE * IMG_HEIGHT * IMG_WIDTH * NUM_CHANNEL
+        )
+        mImageData.order(ByteOrder.nativeOrder())
+    }
+}

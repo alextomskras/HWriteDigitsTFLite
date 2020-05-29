@@ -1,0 +1,2 @@
+rootProject.name='HWriteDigitsTFLite'
+include ':app'
